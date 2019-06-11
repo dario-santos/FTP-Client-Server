@@ -60,12 +60,12 @@ void server_kill()
     do
     {
         scanf("%c", &c);
-
-        if (shutdown_main_thread() != 1)
-        {
-            printf("Server: Não pode desligar o servidor enquanto existem clientes ligados\n");
-            c = 'a';
-        }
+        if (c == 'q')
+            if (shutdown_main_thread() != 1)
+            {
+                printf("Server: Não pode desligar o servidor enquanto existem clientes ligados\n");
+                c = 'a';
+            }
 
     } while (c != 'q');
 }

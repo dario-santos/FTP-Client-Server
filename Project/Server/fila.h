@@ -54,7 +54,7 @@ Fila *fila_find_node(Fila *L, int id);
 *  args:
 *    L: Fila list 
 *
-*  return: Fila max int id
+*  return: Fila max id
 */
 int fila_max_id(Fila *L);
 

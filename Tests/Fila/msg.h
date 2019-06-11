@@ -57,7 +57,7 @@ Msg *msg_remove_node(Msg *L, Msg *del);
 *  args:
 *    L: Msg list 
 *
-*  return: Msg max int id
+*  return: Msg max id
 */
 int msg_max_id(Msg *L);
 
