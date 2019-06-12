@@ -16,7 +16,6 @@ MainConnection *mainConnection;
 Connection *connections;
 Fila *filas = NULL;
 int *available_connections;
-sem_t sem_msg;
 
 void do_nothing(int signum)
 {
