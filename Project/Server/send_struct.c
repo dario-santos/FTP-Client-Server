@@ -46,18 +46,55 @@ int send_fila(Connection connection, Fila *L)
 {
     Fila *aux = L;
     int resposta = -1;
+    int lock_error = 0;
+    int lock_index_error = 0;
+    int i = 0;
+
+    for (i = 0; i < size; i++)
+        if (!lock(locks, size, i))
+        {
+            lock_error = -1;
+            lock_index_error = i;
+            break;
+        }
+
+    if (lock_error == -1)
+    {
+        for (i = 0; i < lock_index_error; i++)
+            unlock(locks, size, i);
+
+        write(connection.fifosfd, &resposta, sizeof(resposta));
+        return -1;
+    }
 
     // Enviar os ids
     while (aux != NULL)
     {
         if (write(connection.fifosfd, &aux->id, sizeof(aux->id)) == -1)
+        {
+            for (i = 0; i < lock_index_error; i++)
+                unlock(locks, size, i);
+
+            write(connection.fifosfd, &resposta, sizeof(resposta));
             return -1;
+        }
+
         aux = aux->p_seg;
     }
 
     // Informar que terminou
     if (write(connection.fifosfd, &resposta, sizeof(resposta)) == -1)
+    {
+        for (i = 0; i < lock_index_error; i++)
+            unlock(locks, size, i);
+
+        write(connection.fifosfd, &resposta, sizeof(resposta));
         return -1;
+    }
+
+    for (i = 0; i < lock_index_error; i++)
+        unlock(locks, size, i);
+
     return 0;
 }
 
