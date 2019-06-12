@@ -18,15 +18,12 @@ typedef struct CONNECTION
 
 
 /*
-* return index disponivel ou -1 em caso de erro
-*/
+ * return index disponivel ou -1 em caso de erro
+ */
 int can_connect(int *L, int size);
 
 void connection_open(int writefd, Connection *connection, int *available_connection);
 
 void connection_close(Connection *connection, int *available_connections);
-
-
-
 
 #endif // CONNECTION_H

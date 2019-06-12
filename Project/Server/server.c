@@ -84,8 +84,8 @@ void *server(void *args)
     int index = 0;
 
     signal(SIGPIPE, do_nothing);
-    lock_sem_init();
-    
+
+    locks_sem_init();
     printf("Server On.\n");
 
     while (true)

@@ -1,10 +1,7 @@
+#include "send_struct.h"
 #include <unistd.h>
 #include <string.h>
-#include "send_struct.h"
 #include "lock.h"
-
-int *locks = NULL;
-int size = 0;
 
 void send_handle(Connection *connection, Fila **filas)
 {
@@ -46,35 +43,12 @@ int send_fila(Connection connection, Fila *L)
 {
     Fila *aux = L;
     int resposta = -1;
-    int lock_error = 0;
-    int lock_index_error = 0;
-    int i = 0;
-
-    for (i = 0; i < size; i++)
-        if (!lock(locks, size, i))
-        {
-            lock_error = -1;
-            lock_index_error = i;
-            break;
-        }
-
-    if (lock_error == -1)
-    {
-        for (i = 0; i < lock_index_error; i++)
-            unlock(locks, size, i);
-
-        write(connection.fifosfd, &resposta, sizeof(resposta));
-        return -1;
-    }
-
+    
     // Enviar os ids
     while (aux != NULL)
     {
         if (write(connection.fifosfd, &aux->id, sizeof(aux->id)) == -1)
         {
-            for (i = 0; i < lock_index_error; i++)
-                unlock(locks, size, i);
-
             write(connection.fifosfd, &resposta, sizeof(resposta));
             return -1;
         }
@@ -85,16 +59,9 @@ int send_fila(Connection connection, Fila *L)
     // Informar que terminou
     if (write(connection.fifosfd, &resposta, sizeof(resposta)) == -1)
     {
-        for (i = 0; i < lock_index_error; i++)
-            unlock(locks, size, i);
-
         write(connection.fifosfd, &resposta, sizeof(resposta));
         return -1;
     }
-
-    for (i = 0; i < lock_index_error; i++)
-        unlock(locks, size, i);
-
     return 0;
 }
 
@@ -103,23 +70,23 @@ int send_fila_add(Connection connection, Fila **L)
     int id = fila_max_id(*L) + 1;
     int error = -1;
 
-    if (size > 0)
-        if (lock(locks, size, id - 2) == 0)
+    if (id - 1 > 0)
+        if (locks_lock_node(id - 2) == 0)
         {
             write(connection.fifosfd, &error, sizeof(int));
             return error;
         }
 
     *L = fila_insert_node(*L, fila_make_node(id, NULL));
-    locks = locks_insert_node(locks, &size);
+    locks_insert_node();
 
     if (write(connection.fifosfd, &id, sizeof(int)) == error)
     {
-        unlock(locks, size, id - 2);
+        locks_unlock_node(id - 2);
         return error;
     }
 
-    unlock(locks, size, id - 2);
+    locks_unlock_node(id - 2);
     return 0;
 }
 
@@ -135,7 +102,7 @@ int send_fila_msg(Connection connection, Fila *L)
     if (read(connection.fifocfd, &id, sizeof(int)) == -1)
         return -1;
 
-    if (!lock(locks, size, id - 1))
+    if (!locks_lock_node(id - 1))
     {
         if (write(connection.fifosfd, &erro, sizeof(int)) == -1)
             return -1;
@@ -148,13 +115,13 @@ int send_fila_msg(Connection connection, Fila *L)
 
     if (write(connection.fifosfd, &erro, sizeof(int)) == -1)
     {
-        unlock(locks, size, id - 1);
+        locks_unlock_node(id - 1);
         return -1;
     }
 
     if (erro == -1)
     {
-        unlock(locks, size, id - 1);
+        locks_unlock_node(id - 1);
         return -1;
     }
 
@@ -165,7 +132,7 @@ int send_fila_msg(Connection connection, Fila *L)
     {
         if (write(connection.fifosfd, &aux->id, sizeof(int)) == -1)
         {
-            unlock(locks, size, id - 1);
+            locks_unlock_node(id - 1);
             return -1;
         }
 
@@ -175,11 +142,11 @@ int send_fila_msg(Connection connection, Fila *L)
     // Informar que terminou
     if (write(connection.fifosfd, &resposta, sizeof(int)) == -1)
     {
-        unlock(locks, size, id - 1);
+        locks_unlock_node(id - 1);
         return -1;
     }
 
-    unlock(locks, size, id - 1);
+    locks_unlock_node(id - 1);
     return 1;
 }
 
@@ -195,7 +162,7 @@ int send_msg_content(Connection connection, Fila *L)
     if (read(connection.fifocfd, &filaId, sizeof(int)) == -1)
         return -1;
 
-    if (!lock(locks, size, filaId - 1))
+    if (!locks_lock_node(filaId - 1))
     {
         if (write(connection.fifosfd, &erro, sizeof(int)) == -1)
             return -1;
@@ -209,19 +176,19 @@ int send_msg_content(Connection connection, Fila *L)
     // Fila não existe
     if (write(connection.fifosfd, &erro, sizeof(int)) == -1)
     {
-        unlock(locks, size, filaId - 1);
+        locks_unlock_node(filaId - 1);
         return -1;
     }
     if (erro == -1)
     {
-        unlock(locks, size, filaId - 1);
+        locks_unlock_node(filaId - 1);
         return -1;
     }
 
     // Receber id da Mensagem
     if (read(connection.fifocfd, &msgId, sizeof(int)) == -1)
     {
-        unlock(locks, size, filaId - 1);
+        locks_unlock_node(filaId - 1);
         return -1;
     }
 
@@ -231,24 +198,24 @@ int send_msg_content(Connection connection, Fila *L)
     // Msg não existe
     if (write(connection.fifosfd, &erro, sizeof(int)) == -1)
     {
-        unlock(locks, size, filaId - 1);
+        locks_unlock_node(filaId - 1);
         return -1;
     }
 
     if (erro == -1)
     {
-        unlock(locks, size, filaId - 1);
+        locks_unlock_node(filaId - 1);
         return -1;
     }
 
     // Envia o conteudo
     if (write(connection.fifosfd, msg->content, strlen(msg->content)) == -1)
     {
-        unlock(locks, size, filaId - 1);
+        locks_unlock_node(filaId - 1);
         return -1;
     }
 
-    unlock(locks, size, filaId - 1);
+    locks_unlock_node(filaId - 1);
     return 1;
 }
 
@@ -265,7 +232,7 @@ int send_msg_add(Connection connection, Fila **L)
     if (read(connection.fifocfd, &filaId, sizeof(int)) == -1)
         return -1;
 
-    if (!lock(locks, size, filaId - 1))
+    if (!locks_unlock_node(filaId - 1))
     {
         if (write(connection.fifosfd, &erro, sizeof(int)) == -1)
             return -1;
@@ -279,19 +246,19 @@ int send_msg_add(Connection connection, Fila **L)
     // Fila não existe
     if (write(connection.fifosfd, &erro, sizeof(int)) == -1)
     {
-        unlock(locks, size, filaId - 1);
+        locks_unlock_node(filaId - 1);
         return -1;
     }
     if (erro == -1)
     {
-        unlock(locks, size, filaId - 1);
+        locks_unlock_node(filaId - 1);
         return -1;
     }
 
     // Receber conteudo da Mensagem a inserir
     if ((n = read(connection.fifocfd, content, CONTENT_SIZE - 1)) == -1)
     {
-        unlock(locks, size, filaId - 1);
+        locks_unlock_node(filaId - 1);
         return -1;
     }
 
@@ -299,7 +266,7 @@ int send_msg_add(Connection connection, Fila **L)
     msgId = msg_max_id(fila->mensagens) + 1;
     fila->mensagens = msg_insert_node(fila->mensagens, msg_make_node(msgId, content));
 
-    unlock(locks, size, filaId - 1);
+    locks_unlock_node(filaId - 1);
     return 1;
 }
 
@@ -314,7 +281,7 @@ int send_msg_remove(Connection connection, Fila **L)
     if (read(connection.fifocfd, &filaId, sizeof(int)) == -1)
         return -1;
 
-    if (!lock(locks, size, filaId - 1))
+    if (!locks_unlock_node(filaId - 1))
     {
         if (write(connection.fifosfd, &erro, sizeof(int)) == -1)
             return -1;
@@ -327,19 +294,19 @@ int send_msg_remove(Connection connection, Fila **L)
 
     if (write(connection.fifosfd, &erro, sizeof(erro)) == -1)
     {
-        unlock(locks, size, filaId - 1);
+        locks_unlock_node(filaId - 1);
         return -1;
     }
     if (erro == -1)
     {
-        unlock(locks, size, filaId - 1);
+        locks_unlock_node(filaId - 1);
         return -1;
     }
 
     // Receber id da Mensagem
     if (read(connection.fifocfd, &msgId, sizeof(int)) == -1)
     {
-        unlock(locks, size, filaId - 1);
+        locks_unlock_node(filaId - 1);
         return -1;
     }
 
@@ -351,15 +318,15 @@ int send_msg_remove(Connection connection, Fila **L)
     // Msg não existe
     if (write(connection.fifosfd, &erro, sizeof(int)) == -1)
     {
-        unlock(locks, size, filaId - 1);
+        locks_unlock_node(filaId - 1);
         return -1;
     }
     if (erro == -1)
     {
-        unlock(locks, size, filaId - 1);
+        locks_unlock_node(filaId - 1);
         return -1;
     }
 
-    unlock(locks, size, filaId - 1);
+    locks_unlock_node(filaId - 1);
     return 1;
 }

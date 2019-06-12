@@ -1,12 +1,47 @@
 #ifndef LOCK_H
 #define LOCK_H
 
-void lock_sem_init(void);
+/*
+ * Function: lock_sem_init
+ * -----------------------
+ *   Initializes the locking system semaphores
+ * 
+ */
+void locks_sem_init(void);
 
-int lock(int *L, int size, int index);
+/*
+ * Function: lock
+ * --------------
+ *   Locks the index node of L
+ *
+ *   index: the index of L to lock
+ *
+ *   returns: true or false
+ */
+int locks_lock_node(int index);
 
-int unlock(int *L, int size, int index);
+/*
+ * Function: unlock
+ * ----------------
+ *   Unlocks the index node of L
+ *
+ *   index: the index of L to unlock
+ *
+ *   returns: true or false
+ */
+int locks_unlock_node(int index);
 
-int* locks_insert_node(int *L, int *size);
+/*
+ * Function: lock_insert_node
+ * --------------------------
+ *   Inserts a new node in the locks list
+ *
+ *
+ *   returns: The head of the list with the new node
+ */
+void locks_insert_node(void);
+
+void locks_free(void);
+
 
 #endif // LOCK_H

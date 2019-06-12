@@ -11,63 +11,74 @@ typedef struct MSG
     struct MSG *p_ant;
 } Msg;
 
-/* msg_make_node: Makes a Msg node
-* 
-*  args:
-*    id: Msg id
-*    content: Msg content
-*
-*  return: Node with the given information
-*/
+/*
+ * Function: msg_make_node
+ * ------------------------
+ *   Makes a Msg node
+ *
+ *   id: node id
+ *   content: Msg content
+ *
+ *   returns: Pointer to the node
+ */
 Msg *msg_make_node(int id, char *content);
 
-/* msg_insert_node: inserts node in the given list
-* 
-*  args:
-*    L: Msg list
-*    node: Msg node to insert
-*
-*  return: Msg list
-*/
+/*
+ * Function: msg_insert_node
+ * ------------------------
+ *   Inserts the node in the list
+ *
+ *   L: List to insert the node
+ *   node: The node to insert
+ *
+ *   returns: Pointer to the new head of the list
+ */
 Msg *msg_insert_node(Msg *L, Msg *node);
 
-
-/* msg_find_node: finds the node in the list with the given id
-* 
-*  args:
-*    L: Msg list
-*    id: id to find
-*
-*  return: Msg list
-*/
+/*
+ * Function: msg_find_node
+ * ------------------------
+ *   Returns the node with the givin id.
+ * 
+ *   L: List to search the node
+ *   id: The id to search
+ *
+ *   returns: Pointer to the node
+ */
 Msg *msg_find_node(Msg *L, int id);
 
-/* msg_remove_node: removes node from the given list
-* 
-*  args:
-*    L: Msg list
-*    del: Msg node to remove
-*
-*  return: Head of Msg list
-*/
+/*
+ * Function: msg_remove_node
+ * ---------------------
+ *   Removes the node from the list
+ * 
+ *   L: List to search
+ *   del: The element to remove from the list
+ *
+ *   returns: The head to the list
+ */
 Msg *msg_remove_node(Msg *L, Msg *del);
 
-/* msg_max_id: searches the id in the given list
-* 
-*  args:
-*    L: Msg list 
-*
-*  return: Msg max id
-*/
+/*
+ * Function: msg_max_id
+ * ---------------------
+ *   Returns highest id
+ * 
+ *   L: List to search
+ *
+ *   returns: The highest id
+ */
 int msg_max_id(Msg *L);
 
-/* msg_free: frees the list
-* 
-*  args:
-*    L: Msg list
-*
-*  return: NULL
-*/
+/*
+ * Function: msg_free
+ * ------------------------
+ *   Frees the allocated memory of the list
+ * 
+ *   L: The list to free
+ *
+ *   returns: NULL
+ */
 Msg *msg_free(Msg *L);
 
 #endif //MSG_H
