@@ -3,14 +3,6 @@
 
 #include "msg.h"
 
-/* msg_make_node: Makes a Msg node
-* 
-*  args:
-*    id: Msg id
-*    content: Msg content
-*
-*  return: Node with the given information
-*/
 typedef struct FILA
 {
     int id;

@@ -7,9 +7,10 @@
 #include "send_struct.h"
 #include "connection.h"
 #include "server.h"
-#include "ftp.h"
 #include "fila.h"
 #include "fifo.h"
+#include "lock.h"
+#include "ftp.h"
 
 MainConnection *mainConnection;
 Connection *connections;
@@ -65,10 +66,8 @@ void *operation(void *args)
         connection_close(connection, available_connections);
         break;
     case 2:
-        sem_wait(&sem_msg);
         send_handle(connection, &filas);
         connection_close(connection, available_connections);
-        sem_post(&sem_msg);
         break;
     }
 
@@ -77,17 +76,18 @@ void *operation(void *args)
 
 void *server(void *args)
 {
-    printf("Server On.\n");
-    signal(SIGPIPE, do_nothing);
-
-    int resposta = -1;
-    int pedido = 0;
-    int index;
     available_connections = (int *)calloc(MAX_CONNECTIONS, sizeof(int));
     mainConnection = (MainConnection *)args;
     connections = (Connection *)malloc(MAX_CONNECTIONS * sizeof(Connection));
 
-    sem_init(&sem_msg, 0, 1);
+    int resposta = -1;
+    int pedido = 0;
+    int index = 0;
+
+    signal(SIGPIPE, do_nothing);
+    lock_sem_init();
+    
+    printf("Server On.\n");
 
     while (true)
     {
