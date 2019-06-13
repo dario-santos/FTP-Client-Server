@@ -8,38 +8,38 @@
 #include "connection.h"
 #include "server.h"
 #include "fila.h"
-#include "fifo.h"
+#include "MainConnection.h"
 #include "lock.h"
 #include "ftp.h"
 
-MainConnection *mainConnection;
-Connection *connections;
+#define TRUE 1
+#define FALSE 0
+#define ERROR -1
+
 Fila *filas = NULL;
-int *available_connections;
 
 void do_nothing(int signum)
 {
 }
 
-int shutdown_main_thread()
+int shutdown_main_thread(pthread_t thread_id)
 {
-    int size = MAX_CONNECTIONS;
-    int i;
-
-    // Se tiver alguem conectado não pode desligar
-    for (i = 0; i < size; i++)
-        if (available_connections[i] == 1)
-            return 0;
+    // Can't shutdown if there are clients connected
+    if (connection_can_connect() != 0)
+        return FALSE;
 
     fila_free(filas);
+    connection_free();
+    locks_free();
 
-    pthread_cancel(mainConnection->thread_id);
+    // Ends the main thread as fast as possible
+    pthread_cancel(thread_id);
     printf("Server: Shutting server down.\n");
 
-    // Descansa para garantir que desliga bem
+    // Waits 5 seconds to secure a safe shutdown
     sleep(5);
 
-    return 1;
+    return TRUE;
 }
 
 void *operation(void *args)
@@ -48,9 +48,9 @@ void *operation(void *args)
     int pedido = -1;
 
     // Receber comando do cliente
-    if (read(connection->fifocfd, &pedido, sizeof(int)) == -1)
+    if (read(connection->fifocfd, &pedido, sizeof(int)) == ERROR)
     {
-        connection_close(connection, available_connections);
+        connection_close(connection->index);
         return NULL;
     }
 
@@ -58,15 +58,15 @@ void *operation(void *args)
     {
     case 0:
     default:
-        connection_close(connection, available_connections);
+        connection_close(connection->index);
         break;
     case 1:
         ftp_handle(connection);
-        connection_close(connection, available_connections);
+        connection_close(connection->index);
         break;
     case 2:
         send_handle(connection, &filas);
-        connection_close(connection, available_connections);
+        connection_close(connection->index);
         break;
     }
 
@@ -75,10 +75,7 @@ void *operation(void *args)
 
 void *server(void *args)
 {
-    available_connections = (int *)calloc(MAX_CONNECTIONS, sizeof(int));
-    mainConnection = (MainConnection *)args;
-    connections = (Connection *)malloc(MAX_CONNECTIONS * sizeof(Connection));
-
+    MainConnection *mainConnection = (MainConnection *)args;
     int resposta = -1;
     int pedido = 0;
     int index = 0;
@@ -86,27 +83,28 @@ void *server(void *args)
     signal(SIGPIPE, do_nothing);
 
     locks_sem_init();
-    printf("Server On.\n");
+    connection_init();
 
-    while (true)
+    printf("Server: Online.\n");
+
+    while (TRUE)
     {
-        // Receber pedido de comunicação
+        // Waits for client request
         if (read(mainConnection->readfd, &pedido, sizeof(int)) <= 0)
             continue;
 
-        // Tentar estabelecer comunicação
-        index = can_connect(available_connections, MAX_CONNECTIONS);
-        if (index != -1)
+        // Tries to open channel
+        index = connection_can_connect();
+        if (index != ERROR)
         {
-            // Criar conexão
-            connections[index].index = index;
-            connection_open(mainConnection->writefd, &connections[index], &available_connections[index]);
-
-            pthread_create(&connections->thread_id, NULL, operation, &connections[index]);
-            pthread_detach(connections->thread_id);
+            // Opens communication channel
+            connection_open(mainConnection->writefd, index);
+            pthread_create(&get_connection_info(index)->thread_id, NULL, operation, get_connection_info(index));
+            pthread_detach(get_connection_info(index)->thread_id);
         }
         else
         {
+            // Sends failure error
             write(mainConnection->writefd, &resposta, sizeof(int));
         }
     }

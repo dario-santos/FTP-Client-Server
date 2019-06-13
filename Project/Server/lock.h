@@ -5,7 +5,6 @@
  * Function: lock_sem_init
  * -----------------------
  *   Initializes the locking system semaphores
- * 
  */
 void locks_sem_init(void);
 
@@ -41,6 +40,11 @@ int locks_unlock_node(int index);
  */
 void locks_insert_node(void);
 
+/*
+ * Function: locks_free
+ * --------------------
+ *   Frees the list
+ */
 void locks_free(void);
 
 

@@ -1,6 +1,6 @@
-#include "lock.h"
 #include <semaphore.h>
 #include <stdlib.h>
+#include "lock.h"
 
 #define LOCKED 1
 #define UNLOCKED 0
@@ -8,11 +8,11 @@
 #define TRUE 1
 #define FALSE 0
 
-sem_t sem_lock;
-sem_t sem_unlock;
+static sem_t sem_lock;
+static sem_t sem_unlock;
 
-int *locks = NULL;
-int size = 0;
+static int *locks = NULL;
+static int size = 0;
 
 void locks_sem_init(void)
 {

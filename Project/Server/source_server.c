@@ -4,66 +4,69 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include "server.h"
-#include "fifo.h"
+#include "MainConnection.h"
 
-void server_kill();
+#define FIFO_COM_S "/tmp/FIFO_COM_S.X"
+#define FIFO_COM_C "/tmp/FIFO_COM_C.X"
+
+#define ERROR -1
+
+void server_kill(pthread_t thread_id);
 
 int main(void)
 {
     umask(0);
     MainConnection mainConnection;
 
-    //Cria os FIFOS de comunicação
+    // Creates the HandShake FIFOS
     if (mkfifo(FIFO_COM_C, 0666) == ERROR)
     {
         perror("Error creating fifo - FIFO_COM_C ");
-        return -1;
+        return ERROR;
     }
     if (mkfifo(FIFO_COM_S, 0666) == ERROR)
     {
         perror("Error creating fifo - FIFO_COM_S ");
-        return -1;
+        return ERROR;
     }
 
-    // Abre as comunicações
+    // Opens the HandShake communications
     mainConnection.readfd = open(FIFO_COM_C, O_RDONLY);
     mainConnection.writefd = open(FIFO_COM_S, O_WRONLY);
 
     if (mainConnection.readfd == ERROR || mainConnection.writefd == ERROR)
     {
         perror("Error creating connections ");
-        return -1;
+        return ERROR;
     }
 
-    // Inicia o servidor
+    // Starts the Server
     pthread_create(&mainConnection.thread_id, NULL, server, &mainConnection);
     pthread_detach(mainConnection.thread_id);
 
-    // Espera pelo comando para terminar
-    server_kill();
+    server_kill(mainConnection.thread_id);
 
-    // Fecha as comunicações
+    // Closes the HandShake communications
     close(mainConnection.readfd);
     close(mainConnection.writefd);
 
-    // Fecha os FIFOS de comunicação
+    // Deletes the HandShake FIFOS
     unlink(FIFO_COM_S);
     unlink(FIFO_COM_C);
 
     return 0;
 }
 
-// ToDo: Terminar todas as threads
-void server_kill()
+void server_kill(pthread_t pthread_id)
 {
     char c = 'a';
     do
     {
         scanf("%c", &c);
         if (c == 'q')
-            if (shutdown_main_thread() != 1)
+            if (shutdown_main_thread(pthread_id) != 1)
             {
-                printf("Server: Não pode desligar o servidor enquanto existem clientes ligados\n");
+                printf("Server: Can't shutdown because there are still clients connected to the server.\n");
                 c = 'a';
             }
 

@@ -13,7 +13,7 @@ typedef struct MSG
 
 /*
  * Function: msg_make_node
- * ------------------------
+ * -----------------------
  *   Makes a Msg node
  *
  *   id: node id
@@ -25,7 +25,7 @@ Msg *msg_make_node(int id, char *content);
 
 /*
  * Function: msg_insert_node
- * ------------------------
+ * -------------------------
  *   Inserts the node in the list
  *
  *   L: List to insert the node
@@ -37,7 +37,7 @@ Msg *msg_insert_node(Msg *L, Msg *node);
 
 /*
  * Function: msg_find_node
- * ------------------------
+ * -----------------------
  *   Returns the node with the givin id.
  * 
  *   L: List to search the node
@@ -49,7 +49,7 @@ Msg *msg_find_node(Msg *L, int id);
 
 /*
  * Function: msg_remove_node
- * ---------------------
+ * -------------------------
  *   Removes the node from the list
  * 
  *   L: List to search
@@ -61,7 +61,7 @@ Msg *msg_remove_node(Msg *L, Msg *del);
 
 /*
  * Function: msg_max_id
- * ---------------------
+ * --------------------
  *   Returns highest id
  * 
  *   L: List to search
@@ -72,7 +72,7 @@ int msg_max_id(Msg *L);
 
 /*
  * Function: msg_free
- * ------------------------
+ * ------------------
  *   Frees the allocated memory of the list
  * 
  *   L: The list to free
