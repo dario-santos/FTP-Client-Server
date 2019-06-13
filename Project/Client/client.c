@@ -3,8 +3,12 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <stdio.h>
-#include "fifo.h"
 #include "menu.h"
+
+#define FIFO_COM_S "/tmp/FIFO_COM_S.X"
+#define FIFO_COM_C "/tmp/FIFO_COM_C.X"
+
+#define ERROR -1
 
 int main(void)
 {
@@ -13,17 +17,19 @@ int main(void)
     Connection connection;
     int status = ERROR;
 
-    // Abre as comunicações
+    // Opens HandShake communications
     int writefd = open(FIFO_COM_C, O_WRONLY);
     int readfd = open(FIFO_COM_S, O_RDONLY);
 
+    // Sends a connection request
     if (readfd == ERROR || writefd == ERROR)
     {
         perror("Error: No server found.");
-        return -1;
+        return ERROR;
     }
-    // Comunicação com o servidor
-    status = can_connect(readfd, writefd);
+
+    // Receives answer from Server 
+    status = connection_can_connect(readfd, writefd);
     
     if(status != ERROR)
     {
@@ -33,7 +39,7 @@ int main(void)
         connection_close(&connection);
     }
 
-    // Fecha as comunicações
+    // Closes HandShake communications
     close(readfd);
     close(writefd);
     return 0;

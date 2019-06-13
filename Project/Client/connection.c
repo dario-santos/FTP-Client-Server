@@ -2,25 +2,31 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include "connection.h"
-#include "fifo.h"
 
-int can_connect(int readfd, int writefd)
+#define FIFOS "/tmp/FIFOS.%d"
+#define FIFOC "/tmp/FIFOC.%d"
+
+#define ERROR -1
+
+int connection_can_connect(int readfd, int writefd)
 {
-    int pedido = 1;
-    int resposta = -1;
-    // Informa servidor que este cliente se quer conectar
-    write(writefd, &pedido, sizeof(int));
+    int request = 1;
+    int answer = -1;
 
-    // Recebe a resposta do cliente -1 em caso de erro
-    read(readfd, &resposta, sizeof(int));
+    write(writefd, &request, sizeof(int));
 
-    printf("Client: id do canal - %d\n", resposta);
-    return resposta;
+    read(readfd, &answer, sizeof(int));
+
+    printf("Client: Channel ID - %d\n", request);
+
+    if(request == -1)
+        printf("Error: Server can't handle connections at the momment.\n");
+    
+    return request;
 }
 
 void connection_open(Connection *connection, int index)
 {
-    //ToDo: snprintf sprintf
     snprintf(connection->fifoc_path, 20, FIFOC, index);
     snprintf(connection->fifos_path, 20, FIFOS, index);
 
@@ -37,8 +43,8 @@ void connection_open(Connection *connection, int index)
 void connection_close(Connection *connection)
 {
     if (close(connection->fifocfd) == ERROR)
-        perror("Closing connection - FIFOC");
+        perror("Error Closing connection : FIFOC");
 
     if (close(connection->fifosfd) == ERROR)
-        perror("Closing connection - FIFOS");
+        perror("Error Closing connection : FIFOS");
 }

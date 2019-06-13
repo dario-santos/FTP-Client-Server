@@ -7,54 +7,55 @@
 void ftp_request(Connection connection)
 {
     char str[BUFSIZ];
-    int resposta = -1;
-    int pedido = -1;
-    int n = 0;
+    int request = -1;
+    int answer = -1;
+    int fd = -1;
+    int n = -1;
 
-    printf("Menu Ficheiro\n");
-    printf("Insira o nome do ficheiro a descarregar: ");
+    printf("File Transfer Menu\n");
+    printf("Insert the file path: ");
     scanf("%s", str);
 
-    // Envia o nome do ficheiro
+    // Sends the file path
     write(connection.fifocfd, str, sizeof(str));
 
-    // Receber resposta
-    read(connection.fifosfd, &resposta, sizeof(int));
+    // Receives the confirmation
+    read(connection.fifosfd, &answer, sizeof(int));
 
-    if (resposta == -1)
+    if (answer == -1)
     {
-        printf("Client: Erro apenas pode receber ficheiros da raiz do servidor\n");
-        printf("Client: Por favor utilize ./\n");
+        printf("Client: Error you can only request files in the server directory.\n");
+        printf("Client: Please use ./\n");
         return;
     }
-    if (resposta == 0)
+    if (answer == 0)
     {
-        printf("Client: O ficheiro que está a tentar aceder é privado\n");
-        printf("Client: Por favor insira a palavra passe: ");
-        printf("Palavra-pass: ");
-        scanf("%d", &pedido);
+        printf("Client: You are trying to transfer a secreft file.\n");
+        printf("Client: Please insert the password: ");
+        printf("Password: ");
+        scanf("%d", &request);
 
-        // Manda a pass
-        write(connection.fifocfd, &pedido, sizeof(int));
+        // Sends password
+        write(connection.fifocfd, &request, sizeof(int));
 
-        // Recebe a reposta
-        read(connection.fifosfd, &resposta, sizeof(int));
+        // Receives the confirmation
+        read(connection.fifosfd, &answer, sizeof(int));
 
-        if (resposta == -1)
+        if (answer == -1)
         {
-            printf("Client: Palavra passe incorreta\n");
+            printf("Client: Wrong password\n");
             return;
         }
     }
 
-    if (resposta == -2)
+    if (answer == -2)
     {
-        printf("Client: O ficheiro não existe\n");
+        printf("Client: The file don't exist.\n");
         return;
     }
 
-    // Cria o ficheiro no cliente
-    int fd = creat("received.txt", 0666);
+    // Creates the file
+    fd = creat("received.txt", 0666);
 
     while ((n = read(connection.fifosfd, str, BUFSIZ)) > 0)
     {
@@ -62,8 +63,8 @@ void ftp_request(Connection connection)
         write(fd, str, strlen(str));
     }
     if (n < 0)
-        perror("Error receiving file");
+        perror("Error receiving file.");
 
-    printf("Client: Ficheiro Recebido.\n");
+    printf("Client: File Received.\n");
     close(fd);
 }

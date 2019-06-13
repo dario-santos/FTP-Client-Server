@@ -1,9 +1,8 @@
 #include <stdio.h>
 #include <unistd.h>
-#include "menu.h"
-#include "fifo.h"
-#include "ftp.h"
 #include "request_struct.h"
+#include "menu.h"
+#include "ftp.h"
 
 int menu_handle_main(Connection connection)
 {
@@ -15,25 +14,25 @@ int menu_handle_main(Connection connection)
 
 int menu_show_main(void)
 {
-    int pedido;
+    int request;
     do
     {
         printf("Client Menu\n");
-        printf("1 - Receber Ficheiro do Servidor.\n");
-        printf("2 - Operar mensagens.\n");
+        printf("1 - Request File to Server.\n");
+        printf("2 - Operate the Data Structures.\n");
         printf("\n");
-        printf("0 - Sair.\n");
-        printf("Opcao: ");
+        printf("0 - Exit.\n");
+        printf("Option: ");
 
-        if (scanf("%d", &pedido) != 1)
+        if (scanf("%d", &request) != 1)
         {
             printf("Aborting connection - please enter an integer\n");
             return 0;
         }
 
-    } while (pedido != 1 && pedido != 2 && pedido != 0);
+    } while (request != 1 && request != 2 && request != 0);
 
-    return pedido;
+    return request;
 }
 
 int menu_request_main(Connection connection, int request)
@@ -43,18 +42,15 @@ int menu_request_main(Connection connection, int request)
     case 0:
     default:
         request = 0;
-        //Manda o pedido ao servidor
         write(connection.fifocfd, &request, sizeof(int));
         break;
 
     case 1:
-        //Manda o pedido ao servidor
         write(connection.fifocfd, &request, sizeof(int));
         ftp_request(connection);
         break;
 
     case 2:
-        //Manda o pedido ao servidor
         write(connection.fifocfd, &request, sizeof(int));
         menu_handle_msg(connection);
         break;
@@ -76,15 +72,15 @@ int menu_show_msg(void)
     do
     {
         printf("Client Msg Menu\n");
-        printf("1 - Filas existentes.\n");
-        printf("2 - Adicionar uma fila.\n");
-        printf("3 - Visualizar msg de uma fila.\n");
-        printf("4 - Ver conteudo de uma msg.\n");
-        printf("5 - Adicionar msg a uma fila.\n");
-        printf("6 - Remover msg de uma fila\n");
+        printf("1 - Request Fila Ids.\n");
+        printf("2 - Add new Fila.\n");
+        printf("3 - Visualize Msg Ids of Fila.\n");
+        printf("4 - Visualize content of a Msg.\n");
+        printf("5 - Add Msg to Fila.\n");
+        printf("6 - Remove Msg from Fila\n");
         printf("\n");
-        printf("0 - Sair.\n");
-        printf("Opcao: ");
+        printf("0 - Exit.\n");
+        printf("Option: ");
 
         if (scanf("%d", &request) != 1)
         {
@@ -92,50 +88,47 @@ int menu_show_msg(void)
             return 0;
         }
 
-    } while (!(request >= 0 && request <=6));
+    } while (!(request >= 0 && request <= 6));
 
     return request;
 }
 
 int menu_request_msg(Connection connection, int request)
-{   
+{
     switch (request)
     {
     case 0:
     default:
         request = 0;
-        //Manda o pedido ao servidor
         write(connection.fifocfd, &request, sizeof(int));
         break;
 
     case 1:
-        //Manda o pedido ao servidor
         write(connection.fifocfd, &request, sizeof(int));
         request_fila(connection);
         break;
 
     case 2:
-        //Manda o pedido ao servidor
         write(connection.fifocfd, &request, sizeof(int));
         request_fila_add(connection);
         break;
+
     case 3:
-        //Manda o pedido ao servidor
         write(connection.fifocfd, &request, sizeof(int));
         request_fila_msg(connection);
         break;
+
     case 4:
-        //Manda o pedido ao servidor
         write(connection.fifocfd, &request, sizeof(int));
         request_msg_content(connection);
         break;
+
     case 5:
-        //Manda o pedido ao servidor
         write(connection.fifocfd, &request, sizeof(int));
         request_msg_add(connection);
         break;
+
     case 6:
-        //Manda o pedido ao servidor
         write(connection.fifocfd, &request, sizeof(int));
         request_msg_remove(connection);
         break;

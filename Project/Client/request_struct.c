@@ -1,25 +1,29 @@
-#include "request_struct.h"
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
+#include "request_struct.h"
+
+#define TRUE 1
+#define FALSE 0
+#define ERROR -1
 
 int request_fila(Connection connection)
 {
     int id;
 
-    printf("Lista de filas (id):\n");
+    printf("Fila list (id):\n");
 
     while (read(connection.fifosfd, &id, sizeof(id)) > 0)
     {
-        if (id == -1)
+        if (id == ERROR)
             break;
 
         printf("id: %d\n", id);
     }
 
-    printf("Fim da fila\n");
+    printf("End of list\n");
 
-    return 0;
+    return TRUE;
 }
 
 int request_fila_add(Connection connection)
@@ -27,47 +31,52 @@ int request_fila_add(Connection connection)
     int id;
 
     read(connection.fifosfd, &id, sizeof(id));
+    if(id == ERROR)
+    {
+        printf("There's a user in the requested node.\n");
+        return FALSE;
+    }
+    printf("Id of the new Fila: %d\n", id);
 
-    printf("Id da nova fila criada: %d\n", id);
-
-    return 0;
+    return TRUE;
 }
 
 int request_fila_msg(Connection connection)
 {
-    int id = 0;
     int erro = -1;
+    int id = 0;
 
-    printf("Insira o id que pretende procurar: ");
+
+    printf("Insert the id of the Fila: ");
     if (scanf("%d", &id) != 1)
     {
-        printf("Input invalido, a terminar ligação\n");
-        return -1;
+        printf("Invalid input, closing connection.\n");
+        return FALSE;
     }
 
-    //Envia id ao servidor
+    // Sends FilaId
     write(connection.fifocfd, &id, sizeof(id));
 
     read(connection.fifosfd, &erro, sizeof(erro));
-    if (erro == -1)
+    if (erro == ERROR)
     {
-        printf("A fila requisitada não existe.\n");
-        return -1;
+        printf("The Fila does not exist or is being used by another client.\n");
+        return FALSE;
     }
 
-    printf("Lista de msg (id):\n");
+    printf("Msg list:\n");
 
     while (read(connection.fifosfd, &id, sizeof(id)) > 0)
     {
-        if (id == -1)
+        if (id == ERROR)
             break;
 
         printf("id: %d\n", id);
     }
 
-    printf("Fim da fila\n");
+    printf("End of Msg\n");
 
-    return 0;
+    return TRUE;
 }
 
 int request_msg_content(Connection connection)
@@ -77,115 +86,110 @@ int request_msg_content(Connection connection)
     int n = 0;
     int erro = -1;
 
-    // Id da fila
-    printf("Insira o id da fila: ");
+    printf("Insert the id of Fila: ");
     if (scanf("%d", &id) != 1)
     {
-        printf("Input invalido, a terminar ligação\n");
-        return -1;
+        printf("Invalid input, closing connection.\n");
+        return FALSE;
     }
     write(connection.fifocfd, &id, sizeof(int));
 
     read(connection.fifosfd, &erro, sizeof(erro));
-    if (erro == -1)
+    if (erro == ERROR)
     {
-        printf("A fila requisitada não existe.\n");
-        return -1;
+        printf("The Fila does not exist or is being used by another client.\n");
+        return FALSE;
     }
 
-    //id da Mensagem
-    printf("Insira o id da mensagem pretendida: ");
+    printf("Insert the id of the Msg: ");
     if (scanf("%d", &id) != 1)
     {
-        printf("Input invalido, a terminar ligação\n");
-        return -1;
+        printf("Invalid input, closing connection.\n");
+        return FALSE;
     }
     write(connection.fifocfd, &id, sizeof(int));
 
     read(connection.fifosfd, &erro, sizeof(int));
-    if (erro == -1)
+    if (erro == ERROR)
     {
-        printf("Client: A mensagem requisitada não existe.\n");
-        return -1;
+        printf("The Msg does not exist.\n");
+        return FALSE;
     }
 
     n = read(connection.fifosfd, str, BUFSIZ);
     str[n] = '\0';
 
-    printf("O conteudo da mensagem %d é: %s\n", id, str);
+    printf("The content of the %d msg is %s\n", id, str);
 
-    return 0;
+    return TRUE;
 }
 
 int request_msg_add(Connection connection)
 {
-    char conteudo[512];
+    char content[512];
     int id = 0;
-    int erro = -1;
+    int error = -1;
 
-    // Id da fila
-    printf("Insira o id da fila: ");
+    printf("Insert the id of Fila: ");
     if (scanf("%d", &id) != 1)
     {
-        printf("Client: Input invalido, a terminar ligação\n");
-        return -1;
+        printf("Invalid input, closing connection.\n");
+        return FALSE;
     }
     write(connection.fifocfd, &id, sizeof(int));
 
-    read(connection.fifosfd, &erro, sizeof(erro));
-    if (erro == -1)
+    read(connection.fifosfd, &error, sizeof(int));
+    if (error == ERROR)
     {
-        printf("Clinet: A fila requisitada não existe.\n");
-        return -1;
+        printf("The Fila does not exist or is being used by another client.\n");
+        return FALSE;
     }
 
-    // Content da mensagem
-    printf("Insira o conteudo da mensagem: ");
-    scanf("%s", conteudo);
-    //enviar
-    write(connection.fifocfd, conteudo, strlen(conteudo));
+    printf("Insert the content of the Msg: ");
+    scanf("%s", content);
 
-    printf("Client: Mensagem adicionada\n");
-    return 0;
+    write(connection.fifocfd, content, strlen(content));
+
+    printf("Msg Added.\n");
+
+    return TRUE;
 }
 
 int request_msg_remove(Connection connection)
 {
     int id = 0;
-    int erro = -1;
+    int error = -1;
 
-    // Id da fila
-    printf("Insira o id da fila: ");
+    printf("Insert the id of Fila: ");
     if (scanf("%d", &id) != 1)
     {
-        printf("Input invalido, a terminar ligação\n");
-        return -1;
+        printf("Invalid input, closing connection.\n");
+        return FALSE;
     }
     write(connection.fifocfd, &id, sizeof(int));
 
-    read(connection.fifosfd, &erro, sizeof(erro));
-    if (erro == -1)
+    read(connection.fifosfd, &error, sizeof(int));
+    if (error == ERROR)
     {
-        printf("A fila requisitada não existe.\n");
-        return -1;
+        printf("The Fila does not exist or is being used by another client.\n");
+        return FALSE;
     }
 
-    //id da Mensagem
-    printf("Insira o id da mensagem pretendida: ");
+    printf("Insert the id of the Msg: ");
     if (scanf("%d", &id) != 1)
     {
-        printf("Input invalido, a terminar ligação\n");
-        return -1;
+        printf("Invalid input, closing connection.\n");
+        return FALSE;
     }
     write(connection.fifocfd, &id, sizeof(int));
 
-    read(connection.fifosfd, &erro, sizeof(int));
-    if (erro == -1)
+    read(connection.fifosfd, &error, sizeof(int));
+    if (error == ERROR)
     {
-        printf("Client: A mensagem requisitada não existe.\n");
-        return -1;
+        printf("The Msg does not exist.\n");
+        return FALSE;
     }
 
-    printf("Client: Mensagem removida\n");
-    return 0;
+    printf("Msg Removed.\n");
+    return TRUE;
 }
