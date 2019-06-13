@@ -14,6 +14,10 @@
 #define FALSE 0
 #define ERROR -1
 
+static int is_in_directory(char *file_path);
+
+static int is_file(char *file_path);
+
 int ftp_handle(Connection *connection)
 {
     char buf[BUFSIZ];
@@ -30,8 +34,27 @@ int ftp_handle(Connection *connection)
         ftp_send(*connection, request_filefd);
     else
         return FALSE;
+
+    return TRUE;
+}
+
+int is_in_directory(char *file_path)
+{
+    if (strncmp(PATH_CURRENT, file_path, strlen(PATH_CURRENT)) != 0)
+        return FALSE;
+
+    if (strncmp("./.", file_path, strlen("./.")) == 0)
+        return FALSE;
     
     return TRUE;
+}
+
+int is_file(char *file_path)
+{
+    struct stat st_buf;
+    stat(file_path, &st_buf);
+
+    return !S_ISDIR(st_buf.st_mode) ? TRUE : FALSE;
 }
 
 int ftp_valid_filepath(Connection *connection, char *file_path, int *request_filefd)
@@ -39,8 +62,8 @@ int ftp_valid_filepath(Connection *connection, char *file_path, int *request_fil
     int answer = ERROR;
     int password = ERROR;
 
-    // The file is from the server directory?
-    if (strncmp(PATH_CURRENT, file_path, strlen(PATH_CURRENT)) != 0)
+    // Is the file in the server directory?
+    if (!is_in_directory(file_path))
     {
         answer = ERROR;
         write(connection->fifosfd, &answer, sizeof(int));
@@ -65,6 +88,14 @@ int ftp_valid_filepath(Connection *connection, char *file_path, int *request_fil
             write(connection->fifosfd, &answer, sizeof(int));
             return FALSE;
         }
+    }
+
+    // Is a directory?
+    if (!is_file(file_path))
+    {
+        answer = -2;
+        write(connection->fifosfd, &answer, sizeof(int));
+        return FALSE;
     }
 
     // The file exists?

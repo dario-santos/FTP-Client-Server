@@ -1,9 +1,7 @@
 #include <unistd.h>
 #include <string.h>
 #include "send_struct.h"
-
 #include "lock.h"
-#include "msg.h"
 
 #define TRUE 1
 #define FALSE 0

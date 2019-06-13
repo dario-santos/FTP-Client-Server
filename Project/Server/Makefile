@@ -12,7 +12,7 @@ msg.o : msg.h msg.c
 fila.o : fila.h fila.c
 	$(CC) $(FLAGS) fila.c
 
-ftp.o : ftp.h MainConnection.h ftp.c
+ftp.o : ftp.h ftp.c
 	$(CC) $(FLAGS) ftp.c
 
 lock.o : lock.h lock.c
@@ -21,13 +21,13 @@ lock.o : lock.h lock.c
 send_struct.o : send_struct.h lock.h send_struct.c
 	$(CC) $(FLAGS) send_struct.c
 
-connection.o : MainConnection.h connection.h connection.c
+connection.o : connection.h connection.c
 	$(CC) $(FLAGS) connection.c
 
 source_server.o : server.h MainConnection.h source_server.c
 	$(CC) $(FLAGS) source_server.c
 
-server.o : send_struct.h server.h ftp.h connection.h lock.h fila.h MainConnection.h server.c
+server.o : send_struct.h connection.h server.h fila.h MainConnection.h lock.h ftp.h server.c
 	$(CC) $(FLAGS) server.c
 
 

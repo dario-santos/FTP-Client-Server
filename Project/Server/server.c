@@ -3,7 +3,6 @@
 #include <unistd.h>
 #include <signal.h>
 #include <stdio.h>
-
 #include "send_struct.h"
 #include "connection.h"
 #include "server.h"
