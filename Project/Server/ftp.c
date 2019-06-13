@@ -1,91 +1,128 @@
+#include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 #include "ftp.h"
-#include "fifo.h"
 
-void ftp_handle(Connection *connection)
+#define PATH_CURRENT "./"
+#define PATH_SECRET "./secret/"
+#define PASSWORD 1234
+
+#define TRUE 1
+#define FALSE 0
+#define ERROR -1
+
+static int is_in_directory(char *file_path);
+
+static int is_file(char *file_path);
+
+int ftp_handle(Connection *connection)
 {
     char buf[BUFSIZ];
-    int request_filefd = -1;
-    int n;
+    int request_filefd = ERROR;
+    int n = ERROR;
 
-    if ((n = read(connection->fifocfd, buf, BUFSIZ)) == -1)
-        return;
+    n = read(connection->fifocfd, buf, BUFSIZ);
+    if (n == ERROR)
+        return FALSE;
 
     buf[n] = '\0';
 
     if (ftp_valid_filepath(connection, buf, &request_filefd))
         ftp_send(*connection, request_filefd);
+    else
+        return FALSE;
+
+    return TRUE;
 }
 
-int ftp_valid_filepath(Connection *connection, char *filepath, int *request_filefd)
+int is_in_directory(char *file_path)
 {
-    int resposta = -1;
-    int pedido = -1;
+    if (strncmp(PATH_CURRENT, file_path, strlen(PATH_CURRENT)) != 0)
+        return FALSE;
 
-    // Não é do diretório
-    if (strncmp(PATH_CURRENT, filepath, strlen(PATH_CURRENT)) != 0)
+    if (strncmp("./.", file_path, strlen("./.")) == 0)
+        return FALSE;
+    
+    return TRUE;
+}
+
+int is_file(char *file_path)
+{
+    struct stat st_buf;
+    stat(file_path, &st_buf);
+
+    return !S_ISDIR(st_buf.st_mode) ? TRUE : FALSE;
+}
+
+int ftp_valid_filepath(Connection *connection, char *file_path, int *request_filefd)
+{
+    int answer = ERROR;
+    int password = ERROR;
+
+    // Is the file in the server directory?
+    if (!is_in_directory(file_path))
     {
-        resposta = -1;
-        write(connection->fifosfd, &resposta, sizeof(int));
-        return 0;
+        answer = ERROR;
+        write(connection->fifosfd, &answer, sizeof(int));
+        return FALSE;
     }
 
-    // Se for privado
-    if (strncmp(PATH_SECRET, filepath, strlen(PATH_SECRET)) == 0)
+    // The file is secret?
+    if (strncmp(PATH_SECRET, file_path, strlen(PATH_SECRET)) == 0)
     {
-        resposta = 0;
-        // Pede a pass ao utilizador
-        if (write(connection->fifosfd, &resposta, sizeof(int)) == -1)
-        {
-            return 0;
-        }
+        answer = 0;
+        // Request the pass
+        if (write(connection->fifosfd, &answer, sizeof(int)) == ERROR)
+            return FALSE;
 
-        // Lê a palavra passe
-        if (read(connection->fifocfd, &pedido, sizeof(int)) == -1)
-            return 0;
-        
-        if (PASSWORD != pedido)
+        // Reads the pass from the client
+        if (read(connection->fifocfd, &password, sizeof(int)) == ERROR)
+            return FALSE;
+
+        if (PASSWORD != password)
         {
-            resposta = -1;
-            write(connection->fifosfd, &resposta, sizeof(int));
-            return 0;
-        }
-        else if (resposta == 1)
-        {
-            if (write(connection->fifosfd, &resposta, sizeof(int)) == -1)
-                return 0;
+            answer = ERROR;
+            write(connection->fifosfd, &answer, sizeof(int));
+            return FALSE;
         }
     }
 
-    // Se o ficheiro não existe
-    if ((*request_filefd = open(filepath, O_RDONLY)) == -1)
+    // Is a directory?
+    if (!is_file(file_path))
     {
-        resposta = -2;
-        write(connection->fifosfd, &resposta, sizeof(int));
-        return 0;
+        answer = -2;
+        write(connection->fifosfd, &answer, sizeof(int));
+        return FALSE;
     }
 
-    // Se tudo correr bem
-    resposta = 1;
-    if (write(connection->fifosfd, &resposta, sizeof(int)) == -1)
-        return 0;
+    // The file exists?
+    *request_filefd = open(file_path, O_RDONLY);
+    if (*request_filefd == ERROR)
+    {
+        answer = -2;
+        write(connection->fifosfd, &answer, sizeof(int));
+        return FALSE;
+    }
 
-    return 1;
+    // Everithing is okay
+    answer = 1;
+    if (write(connection->fifosfd, &answer, sizeof(int)) == ERROR)
+        return FALSE;
+
+    return TRUE;
 }
 
 void ftp_send(Connection connection, int request_filefd)
 {
     char buf[BUFSIZ];
-    int n;
+    int n = 0;
 
     while ((n = read(request_filefd, buf, BUFSIZ)) > 0)
         if (write(connection.fifosfd, buf, n) != n)
             break;
-            
+
     close(request_filefd);
 }

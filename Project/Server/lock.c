@@ -2,62 +2,71 @@
 #include <stdlib.h>
 #include "lock.h"
 
-sem_t sem_lock;
-sem_t sem_unlock;
+#define LOCKED 1
+#define UNLOCKED 0
 
-void lock_sem_init(void)
+#define TRUE 1
+#define FALSE 0
+
+static sem_t sem_lock;
+static sem_t sem_unlock;
+
+static int *locks = NULL;
+static int size = 0;
+
+void locks_sem_init(void)
 {
     sem_init(&sem_lock, 0, 1);
     sem_init(&sem_unlock, 0, 1);
 }
 
-int lock(int *L, int size, int index)
+int locks_lock_node(int index)
 {
     if (index <= -1 || index >= size)
-        return 0;
+        return FALSE;
 
     sem_wait(&sem_lock);
-    if (L[index] == 0)
-        L[index] = 1;
-    else
+
+    if (locks[index] == LOCKED)
     {
         sem_post(&sem_lock);
-        return 0;
+        return FALSE;
     }
 
+    locks[index] = LOCKED;
     sem_post(&sem_lock);
-    return 1;
+    return TRUE;
 }
 
-int unlock(int *L, int size, int index)
+int locks_unlock_node(int index)
 {
     if (index <= -1 || index >= size)
-        return 0;
+        return FALSE;
 
     sem_wait(&sem_unlock);
 
-    if (L[index] == 1)
-        L[index] = 0;
-    else
+    if (locks[index] == UNLOCKED)
     {
         sem_post(&sem_unlock);
-        return 0;
+        return FALSE;
     }
 
+    locks[index] = UNLOCKED;
     sem_post(&sem_unlock);
-    return 1;
+    return TRUE;
 }
 
-int *locks_insert_node(int *L, int *size)
+void locks_insert_node(void)
 {
-    (*size)++;
+    size++;
 
-    if (*size == 1)
-        L = (int *)malloc(sizeof(int));
-    else
-        L = (int *)realloc(L, (*size) * sizeof(int));
+    locks = size == 1 ? (int *)malloc(sizeof(int)) : (int *)realloc(locks, size * sizeof(int));
 
-    L[*size - 1] = 0;
+    locks[size - 1] = UNLOCKED;
+}
 
-    return L;
+void locks_free(void)
+{
+    free(locks);
+    size = 0;
 }

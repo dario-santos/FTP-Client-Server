@@ -1,9 +1,9 @@
 #include <stdlib.h>
 #include "fila.h"
 
-Fila *fila_insert_first(Fila *L, Fila *node);
+static Fila *fila_insert_first(Fila *L, Fila *node);
 
-Fila *fila_insert_last(Fila *L, Fila *node);
+static Fila *fila_insert_last(Fila *L, Fila *node);
 
 Fila *fila_make_node(int id, Msg *msg)
 {

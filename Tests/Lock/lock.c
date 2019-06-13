@@ -1,58 +1,80 @@
 #include <semaphore.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include "lock.h"
+
+#define LOCKED 1
+#define UNLOCKED 0
+
+#define TRUE 1
+#define FALSE 0
 
 sem_t sem_lock;
 sem_t sem_unlock;
 
-void lock_sem_init(void)
+int *locks = NULL;
+int size = 0;
+
+void locks_sem_init(void)
 {
     sem_init(&sem_lock, 0, 1);
     sem_init(&sem_unlock, 0, 1);
 }
 
-int lock(int *L, int size, int index)
+int locks_lock_node(int index)
 {
-    if (index >= size || index < 0)
-        return 0;
+    if (index <= -1 || index >= size)
+        return FALSE;
 
     //sem_wait(&sem_lock);
 
-    if (L[index] == 0)
-        L[index] = 1;
-    else
-        return 0;
+    if (locks[index] == LOCKED)
+    {
+        //sem_post(&sem_lock);
+        return FALSE;
+    }
 
-    //sem_post(&sem_unlock);
-    return 1;
+    locks[index] = LOCKED;
+    //sem_post(&sem_lock);
+    return TRUE;
 }
 
-int unlock(int *L, int size, int index)
+int locks_unlock_node(int index)
 {
-    if (index >= size || index < 0)
-        return 0;
+    if (index <= -1 || index >= size)
+        return FALSE;
 
-    //sem_wait(&sem_lock);
+   // sem_wait(&sem_unlock);
 
-    if (L[index] == 1)
-        L[index] = 0;
-    else
-        return 0;
+    if (locks[index] == UNLOCKED)
+    {
+        //sem_post(&sem_unlock);
+        return FALSE;
+    }
 
+    locks[index] = UNLOCKED;
     //sem_post(&sem_unlock);
-    return 1;
+    return TRUE;
 }
 
-int *locks_insert_node(int *L, int *size)
+void locks_insert_node(void)
 {
-    (*size)++;
+    size++;
 
-    if (*size == 1)
-        L = (int *)malloc(sizeof(int));
-    else
-        L = (int *)realloc(L, (*size) * sizeof(int));
+    locks = size == 1 ? (int *)malloc(sizeof(int)) : (int *)realloc(locks, size * sizeof(int));
 
-    L[*size - 1] = 0;
+    locks[size - 1] = UNLOCKED;
+}
 
-    return L;
+void locks_free(void)
+{
+    free(locks);
+    size = 0;
+}
+
+void locks_print(void)
+{
+    int i = 0;
+    for(i = 0 ; i < size ; i++)
+        printf("locks[%d] = %d\n", i, locks[i]);
 }

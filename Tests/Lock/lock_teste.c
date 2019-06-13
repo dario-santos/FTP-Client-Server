@@ -15,16 +15,20 @@ int main(void)
 
 int teste_locks_insert_node(void)
 {
-    int size = 0;
-    int *locks = locks_insert_node(NULL, &size);
+    locks_insert_node();
+    locks_insert_node();
+    locks_insert_node();
+    printf("Antes\n");
+    locks_print();
+    printf("Lock\n");
+    locks_lock_node(2);
+    locks_lock_node(0);
+    
+    printf("Depois\n");
+    locks_print();
 
-    //printf("locks[0] = %d\n", locks[0]);
-
-    locks = locks_insert_node(locks, &size);
-
-    locks[size - 1] = 1;
-
-    //printf("locks[size - 1] = %d\n", locks[size - 1]);
+    locks_unlock_node(2);
+    locks_print();
 
     return 1;
 }
@@ -32,17 +36,17 @@ int teste_locks_insert_node(void)
 int teste_lock(void)
 {
     int size = 0;
-    int *locks = locks_insert_node(NULL, &size);
-    locks_insert_node(NULL, &size);
-    locks_insert_node(NULL, &size);
-    locks_insert_node(NULL, &size);
+    //int *locks = locks_insert_node(NULL, &size);
+    //locks_insert_node(NULL, &size);
+    //locks_insert_node(NULL, &size);
+    //locks_insert_node(NULL, &size);
 
-    lock(locks, size, 0);
-    printf("locks[0] = %d\n", locks[0]);
+//    lock(locks, size, 0);
+  //  printf("locks[0] = %d\n", locks[0]);
 
-    unlock(locks, size, 0);
+//unlock(locks, size, 0);
 
-    printf("locks[0] = %d\n", locks[0]);
+//  printf("locks[0] = %d\n", locks[0]);
 
     return 1;
 }

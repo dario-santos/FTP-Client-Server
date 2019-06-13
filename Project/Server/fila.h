@@ -3,14 +3,6 @@
 
 #include "msg.h"
 
-/* msg_make_node: Makes a Msg node
-* 
-*  args:
-*    id: Msg id
-*    content: Msg content
-*
-*  return: Node with the given information
-*/
 typedef struct FILA
 {
     int id;
@@ -19,53 +11,62 @@ typedef struct FILA
     struct FILA *p_ant;
 } Fila;
 
-/* fila_make_node: Makes a Fila node
-* 
-*  args:
-*    id: Fila id
-*    mensagens: Msg list
-*
-*  return: Node with the given information
-*/
+/*
+ * Function: fila_make_node
+ * ------------------------
+ *   Makes a Fila node
+ *
+ *   id: node id
+ *   mensagens: Msg list of this node
+ *
+ *   returns: Pointer to the node
+ */
 Fila *fila_make_node(int id, Msg *mensagens);
 
-/* fila_insert_node: Inserts a node in the given list
-* 
-*  args:
-*    L: Fila list
-*    node: Fila node to insert
-*
-*  return: Fila list with the node
-*/
+/*
+ * Function: fila_insert_node
+ * --------------------------
+ *   Inserts the node in the list
+ *
+ *   L: List to insert the node
+ *   node: The node to insert
+ *
+ *   returns: Pointer to the new head of the list
+ */
 Fila *fila_insert_node(Fila *L, Fila *node);
 
-/* fila_find_node: finds the node in the list with the given id
-* 
-*  args:
-*    L: Fila list
-*    id: id to find
-*
-*  return: Fila list
-*/
+/*
+ * Function: fila_find_node
+ * ------------------------
+ *   Returns the node with the givin id.
+ * 
+ *   L: List to search the node
+ *   id: The id to search
+ *
+ *   returns: Pointer to the node
+ */
 Fila *fila_find_node(Fila *L, int id);
 
-/* fila_max_id: searches the id in the given list
-* 
-*  args:
-*    L: Fila list 
-*
-*  return: Fila max id
-*/
+/*
+ * Function: fila_max_id
+ * ---------------------
+ *   Returns highest id
+ * 
+ *   L: List to search
+ *
+ *   returns: The highest id
+ */
 int fila_max_id(Fila *L);
 
-
-/* fila_free: frees the list
-* 
-*  args:
-*    L: Fila list
-*
-*  return: NULL
-*/
+/*
+ * Function: fila_free
+ * ------------------------
+ *   Frees the allocated memory of the list
+ * 
+ *   L: The list to free
+ *
+ *   returns: NULL
+ */
 Fila *fila_free(Fila *L);
 
 #endif // FILA_H

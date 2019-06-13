@@ -2,8 +2,9 @@
 #include <string.h>
 #include "msg.h"
 
-Msg *msg_insert_first(Msg *L, Msg *node);
-Msg *msg_insert_last(Msg *L, Msg *node);
+static Msg *msg_insert_first(Msg *L, Msg *node);
+
+static Msg *msg_insert_last(Msg *L, Msg *node);
 
 Msg *msg_make_node(int id, char *content)
 {
